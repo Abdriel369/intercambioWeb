@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#7f1d1d" />
+    <meta
+      name="description"
+      content="Intercambio navideño familiar: reclama tu nombre y descubre tu regalo sorpresa."
+    />
+    <title>Intercambio</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script defer src="/js/confetti.js"></script>
+    <script defer src="/js/wheel.js"></script>
+    <script defer src="/js/app.js"></script>
+  </head>
+  <body class="participant-page">
+    <div class="page-decor" aria-hidden="true"></div>
+
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero__sparkle" aria-hidden="true">✦</div>
+        <p class="eyebrow">Navidad en familia</p>
+        <h1>Intercambio</h1>
+        <p class="hero__subtitle">Un regalo especial, un secreto por descubrir.</p>
+      </header>
+
+      <main id="main-content">
+        <section id="loading-view" class="card centered-card" aria-live="polite">
+          <div class="loader" aria-hidden="true"></div>
+          <p>Preparando la magia navideña…</p>
+        </section>
+
+        <section id="claim-view" class="view" hidden>
+          <div id="available-card" class="card">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">🎄</span>
+              <div>
+                <h2>Elige tu nombre</h2>
+                <p>Selecciona el nombre que te corresponde para reclamar tu lugar.</p>
+              </div>
+            </div>
+            <div id="available-list" class="name-grid" aria-live="polite"></div>
+            <p id="available-empty" class="empty-message" hidden>
+              Todos los nombres ya fueron reclamados. Si necesitas ayuda, pide al
+              administrador que libere el tuyo.
+            </p>
+          </div>
+
+          <div id="claim-panel" class="card claim-panel" hidden>
+            <button id="cancel-claim" class="text-button" type="button">
+              ← Elegir otro nombre
+            </button>
+            <p class="eyebrow">Tu nombre seleccionado</p>
+            <h2 id="selected-name" class="selected-name"></h2>
+
+            <div id="claim-options" class="claim-options">
+              <button id="choose-code-button" class="choice-card" type="button">
+                <span class="choice-card__icon" aria-hidden="true">🔑</span>
+                <span>
+                  <strong>Ya tengo mi código</strong>
+                  <small>Escribe los 6 caracteres que recibiste por WhatsApp.</small>
+                </span>
+              </button>
+              <button id="request-code-button" class="choice-card choice-card--green" type="button">
+                <span class="choice-card__icon" aria-hidden="true">💌</span>
+                <span>
+                  <strong>Solicitar mi código</strong>
+                  <small>Le avisaremos al organizador para que te lo envíe.</small>
+                </span>
+              </button>
+            </div>
+
+            <div id="request-status" class="request-status" role="status" hidden></div>
+
+            <form id="claim-form" novalidate hidden>
+              <button id="back-to-options" class="text-button" type="button">
+                ← Volver a las opciones
+              </button>
+              <label for="claim-code">Código de acceso de 6 caracteres</label>
+              <input
+                id="claim-code"
+                class="code-input"
+                name="claimCode"
+                type="text"
+                inputmode="text"
+                maxlength="6"
+                autocomplete="one-time-code"
+                autocapitalize="characters"
+                spellcheck="false"
+                placeholder="A2B3C4"
+                required
+                aria-describedby="claim-hint claim-error"
+              />
+              <p id="claim-hint" class="field-hint">
+                Es el código que recibiste por WhatsApp. No lo compartas.
+              </p>
+              <p id="claim-error" class="form-error" role="alert" hidden></p>
+              <button id="claim-submit" class="btn btn--primary btn--wide" type="submit">
+                Reclamar mi nombre
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section id="participant-view" class="view" hidden>
+          <div class="welcome">
+            <p class="eyebrow">Tu lugar está listo</p>
+            <h2>Hola, <span id="participant-name"></span> <span aria-hidden="true">👋</span></h2>
+          </div>
+
+          <div id="not-started-card" class="card centered-card status-card" hidden>
+            <div class="status-icon" aria-hidden="true">⏳</div>
+            <h2>El sorteo todavía no comienza</h2>
+            <p>
+              El administrador iniciará el intercambio pronto. Vuelve a entrar más
+              tarde; tu nombre ya está reclamado.
+            </p>
+            <button class="btn btn--gold btn--wide" type="button" disabled>
+              <span aria-hidden="true">✨</span> Girar la ruleta
+            </button>
+            <p class="field-hint centered">El botón se habilitará cuando inicie el sorteo.</p>
+            <button id="refresh-status" class="btn btn--ghost" type="button">
+              Actualizar estado
+            </button>
+          </div>
+
+          <div id="spin-section" class="spin-section" hidden>
+            <div class="wheel-copy">
+              <p class="eyebrow">El momento llegó</p>
+              <h2>Gira y descubre tu regalo</h2>
+              <p>La ruleta se detendrá en la persona a quien le regalarás.</p>
+            </div>
+            <div class="wheel-stage">
+              <div class="wheel-pointer" aria-hidden="true"></div>
+              <canvas id="wheel" width="720" height="720" aria-label="Ruleta con los nombres de los participantes"></canvas>
+            </div>
+            <button id="spin-button" class="btn btn--gold btn--wide btn--spin" type="button">
+              <span aria-hidden="true">✨</span> Girar la ruleta
+            </button>
+            <p id="spin-hint" class="field-hint centered">
+              Solo puedes girar una vez. Tu resultado se guarda al instante.
+            </p>
+            <p id="spin-error" class="form-error centered" role="alert" hidden></p>
+          </div>
+
+          <div id="result-card" class="card result-card" hidden>
+            <p class="result-kicker">Tu resultado</p>
+            <div class="result-gift" aria-hidden="true">🎁</div>
+            <p class="result-label">Te tocó:</p>
+            <h2 id="result-name" class="result-name"></h2>
+            <p class="result-note">
+              Este resultado ya quedó guardado. Siempre será el mismo, aunque cierres
+              la app o recargues la página.
+            </p>
+            <div class="result-rule" aria-hidden="true"></div>
+            <p class="result-secret">
+              <span aria-hidden="true">🤫</span> Guárdalo en secreto hasta el intercambio.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span aria-hidden="true">★</span> Intercambio · Hecho con cariño para la familia
+        <span aria-hidden="true">★</span>
+      </footer>
+    </div>
+
+    <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="modal-root"></div>
+  </body>
+</html>

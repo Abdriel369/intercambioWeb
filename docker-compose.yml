@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: .
+      target: production
+    container_name: intercambio-mendiola
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # En local se usa development para permitir cookies sin HTTPS.
+      # En un despliegue real define NODE_ENV=production y TRUST_PROXY=1.
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      DB_PATH: /app/data/app.db
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Define ADMIN_PASSWORD en tu archivo .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Define SESSION_SECRET en tu archivo .env}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-none}
+      ADMIN_SHOW_RECEIVER_LIST: ${ADMIN_SHOW_RECEIVER_LIST:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      WHATSAPP_META_TOKEN: ${WHATSAPP_META_TOKEN:-}
+      WHATSAPP_META_PHONE_NUMBER_ID: ${WHATSAPP_META_PHONE_NUMBER_ID:-}
+      WHATSAPP_META_TEMPLATE_NAME: ${WHATSAPP_META_TEMPLATE_NAME:-}
+      WHATSAPP_META_TEMPLATE_LANG: ${WHATSAPP_META_TEMPLATE_LANG:-es_MX}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+      TWILIO_CONTENT_SID: ${TWILIO_CONTENT_SID:-}
+    volumes:
+      - mendiola_data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/healthz').then((r) => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1));",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    environment:
+      NODE_ENV: test
+      WHATSAPP_PROVIDER: none
+    command: ["npm", "test"]
+
+volumes:
+  mendiola_data:

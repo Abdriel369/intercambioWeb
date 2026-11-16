@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#7f1d1d" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Panel de administración · Intercambio</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script defer src="/js/admin.js"></script>
+  </head>
+  <body class="admin-page">
+    <div class="page-decor" aria-hidden="true"></div>
+
+    <div class="admin-shell">
+      <header class="admin-hero">
+        <div>
+          <p class="eyebrow">Intercambio</p>
+          <h1>Panel de administración</h1>
+          <p class="admin-hero__note">
+            <span aria-hidden="true">🙈</span> Panel ciego: aquí nunca se muestra quién le
+            tocó a quién.
+          </p>
+        </div>
+        <div class="admin-hero__actions">
+          <a class="text-button light" href="/">Ver vista de participante</a>
+          <button id="logout-button" class="btn btn--small btn--outline-light" type="button" hidden>
+            Salir
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section id="login-view" class="card login-card" hidden>
+          <div class="login-ornament" aria-hidden="true">🎄</div>
+          <h2>Entrar al panel</h2>
+          <p>Escribe la contraseña de administración para continuar.</p>
+          <form id="login-form">
+            <label for="admin-password">Contraseña</label>
+            <input
+              id="admin-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              autofocus
+            />
+            <p id="login-error" class="form-error" role="alert" hidden></p>
+            <button id="login-submit" class="btn btn--primary btn--wide" type="submit">
+              Entrar
+            </button>
+          </form>
+        </section>
+
+        <section id="admin-view" hidden>
+          <div id="draw-banner" class="draw-banner" hidden>
+            <span class="draw-banner__icon" aria-hidden="true">🔒</span>
+            <p>
+              <strong>El sorteo ya inició.</strong> Los participantes y las asignaciones
+              están congelados. Cada persona verá su resultado al girar.
+            </p>
+          </div>
+
+          <div id="post-start-alert" class="alert-banner alert-banner--warning" hidden>
+            <span class="alert-banner__icon" aria-hidden="true">⚠️</span>
+            <p id="post-start-alert-text"></p>
+          </div>
+
+          <section class="stats-grid" aria-label="Resumen del intercambio">
+            <article class="stat-card">
+              <span class="stat-label">Con teléfono</span>
+              <strong class="stat-value"><span id="stat-phone">0</span><small>/0</small></strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Códigos enviados</span>
+              <strong class="stat-value"><span id="stat-sent">0</span><small>/0</small></strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Reclamados</span>
+              <strong class="stat-value"><span id="stat-claimed">0</span><small>/0</small></strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Ya giraron</span>
+              <strong class="stat-value"><span id="stat-spun">0</span><small>/0</small></strong>
+            </article>
+            <article class="stat-card stat-card--requests" id="requests-stat">
+              <span class="stat-label">Solicitudes pendientes</span>
+              <strong class="stat-value stat-value--request">
+                <span class="request-light" aria-hidden="true"></span>
+                <span id="stat-requests">0</span>
+              </strong>
+            </article>
+            <article class="stat-card stat-card--state">
+              <span class="stat-label">Estado del sorteo</span>
+              <strong id="stat-state" class="stat-state">Sin iniciar</strong>
+            </article>
+          </section>
+
+          <section id="prestart-alerts" class="card alerts-card" hidden>
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">🔎</span>
+              <div>
+                <h2>Alertas antes de iniciar</h2>
+                <p>Revisa estos pendientes antes de congelar el sorteo.</p>
+              </div>
+            </div>
+            <div id="alerts-list" class="alerts-list"></div>
+          </section>
+
+          <section class="card action-card">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">🎲</span>
+              <div>
+                <h2>Control del sorteo</h2>
+                <p>Inicia cuando la familia esté lista. El sorteo completo queda congelado.</p>
+              </div>
+            </div>
+            <p class="permanent-notice">
+              <span aria-hidden="true">🔒</span> Una vez iniciado el sorteo no se puede
+              agregar, quitar ni renombrar participantes.
+            </p>
+            <div class="button-row">
+              <button id="start-button" class="btn btn--primary" type="button">
+                Iniciar sorteo
+              </button>
+              <button id="reset-button" class="btn btn--danger-outline" type="button">
+                Reiniciar
+              </button>
+            </div>
+          </section>
+
+          <section id="progress-card" class="card progress-card" hidden>
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">📊</span>
+              <div>
+                <h2>Progreso del sorteo</h2>
+                <p>Seguimiento de giros y verificación de integridad, sin revelar parejas.</p>
+              </div>
+            </div>
+
+            <div id="integrity-box" class="integrity-box is-checking" role="status" aria-live="polite">
+              <div class="integrity-box__head">
+                <span id="integrity-icon" class="integrity-icon" aria-hidden="true">…</span>
+                <strong id="integrity-title">Verificando integridad…</strong>
+                <button id="verify-integrity-button" class="btn btn--ghost btn--small" type="button">
+                  Verificar ahora
+                </button>
+              </div>
+              <p id="integrity-detail" class="integrity-detail"></p>
+            </div>
+
+            <div class="progress-grid">
+              <article class="progress-block">
+                <h3>Ya giraron: <span id="progress-spun">0</span> de <span id="progress-spun-total">0</span></h3>
+                <ol id="spun-names-list" class="progress-list"></ol>
+                <p id="spun-empty" class="progress-empty" hidden>Todavía no ha girado nadie.</p>
+              </article>
+
+              <article class="progress-block progress-block--pending">
+                <h3>Faltan por girar: <span id="progress-pending">0</span></h3>
+                <ol id="pending-names-list" class="progress-list"></ol>
+                <p id="pending-empty" class="progress-empty" hidden>Todos ya giraron.</p>
+              </article>
+
+              <article class="progress-block progress-block--gifts">
+                <h3>Regalos ya asignados: <span id="gifts-assigned">0</span> de <span id="gifts-total">0</span></h3>
+                <h3>Regalos pendientes de asignar: <span id="gifts-pending">0</span></h3>
+              </article>
+            </div>
+
+            <p id="risk-notice" class="risk-notice" hidden>
+              Para que todos reciban regalo, todos deben girar. Quien no gire dejará a
+              alguien sin regalo.
+            </p>
+            <p id="unclaimed-risk-note" class="unclaimed-risk-note" hidden>
+              Esta persona aún no entra. Quien le toque regalarle quedará sin regalo si
+              nunca gira.
+            </p>
+          </section>
+
+          <section class="card">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">💬</span>
+              <div>
+                <h2>Mensaje de WhatsApp</h2>
+                <p>Personaliza el mensaje con los códigos de acceso.</p>
+              </div>
+            </div>
+            <label for="template-input" class="sr-only">Plantilla del mensaje</label>
+            <textarea id="template-input" rows="4" maxlength="1200"></textarea>
+            <p class="field-hint">
+              Variables disponibles: <code>{nombre}</code>, <code>{url}</code> y
+              <code>{codigo}</code>. URL pública actual:
+              <strong id="public-url">—</strong>
+            </p>
+            <div class="button-row">
+              <button id="save-template-button" class="btn btn--green btn--small" type="button">
+                Guardar plantilla
+              </button>
+              <span id="template-status" class="inline-status" role="status"></span>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-heading section-heading--wrap">
+              <span class="section-icon" aria-hidden="true">📱</span>
+              <div>
+                <h2>Participantes, teléfonos y solicitudes</h2>
+                <p>
+                  Las solicitudes de código aparecen en verde y se ordenan arriba. El panel
+                  se actualiza solo cada 30 segundos.
+                </p>
+              </div>
+            </div>
+
+            <div class="requests-counter" id="requests-counter" role="status">
+              <span class="request-light" aria-hidden="true"></span>
+              Solicitudes pendientes: <strong id="requests-count">0</strong>
+            </div>
+
+            <div class="toolbar">
+              <button id="add-participant-button" class="btn btn--green btn--small" type="button">
+                Agregar participante
+              </button>
+              <button id="open-import-button" class="btn btn--ghost btn--small" type="button">
+                Importar teléfonos
+              </button>
+              <button id="open-batch-button" class="btn btn--gold btn--small" type="button">
+                Envío en lote
+              </button>
+              <button id="refresh-button" class="btn btn--ghost btn--small" type="button">
+                Actualizar
+              </button>
+            </div>
+            <div class="toolbar toolbar--filters">
+              <label class="check-field" for="pending-filter">
+                <input id="pending-filter" type="checkbox" />
+                Pendientes de enviar
+              </label>
+              <label class="check-field" for="request-filter">
+                <input id="request-filter" type="checkbox" />
+                Solicitudes pendientes
+              </label>
+            </div>
+
+            <div id="participants-list" class="participants-list" aria-live="polite"></div>
+            <p id="participants-empty" class="empty-message" hidden>
+              No hay participantes que coincidan con el filtro.
+            </p>
+          </section>
+
+          <section class="card">
+            <div class="section-heading section-heading--wrap">
+              <span class="section-icon" aria-hidden="true">📜</span>
+              <div>
+                <h2>Registro de acciones</h2>
+                <p>Últimos movimientos, sin revelar ninguna asignación.</p>
+              </div>
+              <button id="refresh-log-button" class="btn btn--ghost btn--small" type="button">
+                Actualizar
+              </button>
+            </div>
+            <div id="log-list" class="log-list"></div>
+          </section>
+
+          <section class="card danger-zone">
+            <div class="section-heading">
+              <span class="section-icon section-icon--danger" aria-hidden="true">☢️</span>
+              <div>
+                <h2>Zona de peligro</h2>
+                <p>Descarga un respaldo o reinicia la temporada completa.</p>
+              </div>
+            </div>
+            <div class="button-row">
+              <a
+                id="backup-button"
+                class="btn btn--ghost"
+                href="/admin/backup"
+                download
+              >
+                Descargar respaldo
+              </a>
+              <button id="season-reset-button" class="btn btn--danger" type="button">
+                Reiniciar temporada
+              </button>
+            </div>
+            <p class="field-hint">
+              El respaldo contiene teléfonos y códigos de acceso. Guárdalo en un lugar
+              seguro. Reiniciar temporada borra participantes, teléfonos, códigos,
+              reclamos, solicitudes, sorteo y bitácora.
+            </p>
+          </section>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span aria-hidden="true">★</span> Intercambio · Panel privado
+        <span aria-hidden="true">★</span>
+      </footer>
+    </div>
+
+    <dialog id="start-dialog" class="modal modal--wide">
+      <form id="start-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">🎲</div>
+        <h2>Iniciar el sorteo</h2>
+        <p class="modal-lead">
+          Se generará el sorteo completo y ya no se podrá agregar, quitar ni renombrar
+          participantes.
+        </p>
+        <div class="start-summary">
+          <span>Reclamados</span>
+          <strong><span id="start-claimed">0</span>/<span id="start-total">0</span></strong>
+        </div>
+        <p id="start-unclaimed-warning" class="warning-box warning-box--strong" hidden></p>
+        <div id="start-pending-wrap" class="start-pending" hidden>
+          <h3>Pendientes detectados</h3>
+          <div id="start-pending-list"></div>
+        </div>
+        <label class="check-field check-field--boxed" id="start-extra-wrap" for="start-extra-confirm" hidden>
+          <input id="start-extra-confirm" type="checkbox" />
+          Entiendo las alertas y deseo iniciar el sorteo de todos modos.
+        </label>
+        <label for="start-confirm-input">
+          Para confirmar, escribe <strong>INICIAR</strong>
+        </label>
+        <input
+          id="start-confirm-input"
+          type="text"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="INICIAR"
+        />
+        <p id="start-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="start-dialog">
+            Cancelar
+          </button>
+          <button id="start-confirm-button" class="btn btn--primary" type="submit" disabled>
+            Iniciar sorteo
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="reset-dialog" class="modal">
+      <form id="reset-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">↩️</div>
+        <h2>Reiniciar</h2>
+        <p id="reset-description" class="modal-lead"></p>
+        <p id="reset-error" class="form-error" role="alert" hidden></p>
+        <label for="reset-confirm-input">
+          Para confirmar, escribe <strong>REINICIAR</strong>
+        </label>
+        <input
+          id="reset-confirm-input"
+          type="text"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="REINICIAR"
+        />
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="reset-dialog">
+            Cancelar
+          </button>
+          <button id="reset-confirm-button" class="btn btn--danger" type="submit" disabled>
+            Reiniciar
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="add-participant-dialog" class="modal">
+      <form id="add-participant-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">➕</div>
+        <h2>Agregar participante</h2>
+        <p class="modal-lead">Solo se puede antes de iniciar el sorteo.</p>
+        <label for="add-name">Nombre</label>
+        <input id="add-name" type="text" maxlength="60" autocomplete="off" />
+        <label for="add-phone">Teléfono (opcional)</label>
+        <input id="add-phone" type="tel" inputmode="tel" placeholder="Ej. 527771234567" />
+        <p id="add-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="add-participant-dialog">
+            Cancelar
+          </button>
+          <button id="add-confirm-button" class="btn btn--green" type="submit">
+            Agregar participante
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="delete-participant-dialog" class="modal">
+      <form id="delete-participant-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">🗑️</div>
+        <h2>Eliminar participante</h2>
+        <p class="modal-lead">
+          Para eliminar a <strong id="delete-name"></strong>, escribe su nombre exacto.
+          Esta acción no se puede deshacer.
+        </p>
+        <label for="delete-confirm-input">Nombre exacto</label>
+        <input id="delete-confirm-input" type="text" autocomplete="off" />
+        <p id="delete-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="delete-participant-dialog">
+            Cancelar
+          </button>
+          <button id="delete-confirm-button" class="btn btn--danger" type="submit">
+            Eliminar participante
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="import-dialog" class="modal modal--wide">
+      <form id="import-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">📥</div>
+        <h2>Importar teléfonos</h2>
+        <p class="modal-lead">
+          Pega una línea por persona con el formato
+          <strong>Nombre, Teléfono</strong> o copia y pega directamente desde Excel
+          (Nombre y Teléfono separados por tabulador).
+        </p>
+        <label for="import-text">Lista de teléfonos</label>
+        <textarea
+          id="import-text"
+          rows="8"
+          placeholder="María López, 777 123 4567&#10;José Pérez&#9;+52 (777) 765-4321"
+        ></textarea>
+        <p class="field-hint">
+          Nada se guarda hasta que revises la vista previa y confirmes.
+        </p>
+        <p id="import-error" class="form-error" role="alert" hidden></p>
+        <div id="import-preview" class="import-preview" hidden>
+          <div class="import-summary" aria-live="polite">
+            <span class="badge badge--success"><span id="import-matched-count">0</span> emparejados</span>
+            <span class="badge badge--warning"><span id="import-notfound-count">0</span> no encontrados</span>
+            <span class="badge badge--danger"><span id="import-invalid-count">0</span> inválidos</span>
+          </div>
+          <div class="preview-columns">
+            <div>
+              <h3>Coincidencias</h3>
+              <ul id="import-matched-list" class="preview-list"></ul>
+            </div>
+            <div>
+              <h3>No encontrados</h3>
+              <ul id="import-notfound-list" class="preview-list"></ul>
+            </div>
+            <div>
+              <h3>Inválidos</h3>
+              <ul id="import-invalid-list" class="preview-list"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="import-dialog">
+            Cerrar
+          </button>
+          <button id="preview-import-button" class="btn btn--green" type="button">
+            Vista previa
+          </button>
+          <button id="confirm-import-button" class="btn btn--primary" type="button" disabled>
+            Guardar teléfonos
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="release-dialog" class="modal">
+      <form id="release-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">🔓</div>
+        <h2>Liberar nombre</h2>
+        <p class="modal-lead">
+          <strong id="release-name"></strong> podrá reclamar su nombre de nuevo. Su
+          asignación se conserva exactamente igual.
+        </p>
+        <label class="check-field check-field--boxed" for="release-regenerate">
+          <input id="release-regenerate" type="checkbox" checked />
+          Generar un código nuevo, limpiar solicitudes y el estado de envío
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="release-dialog">
+            Cancelar
+          </button>
+          <button class="btn btn--danger" type="submit">Liberar nombre</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="batch-dialog" class="modal modal--wide">
+      <div class="batch-header">
+        <div class="modal-icon" aria-hidden="true">💌</div>
+        <div>
+          <h2>Envío en lote</h2>
+          <p class="modal-lead">
+            Los navegadores bloquean muchas pestañas a la vez. Envía uno por uno con
+            <strong>Siguiente pendiente</strong>.
+          </p>
+        </div>
+      </div>
+      <div id="batch-progress" class="batch-progress"></div>
+      <div id="batch-list" class="batch-list"></div>
+      <div class="modal-actions">
+        <button class="btn btn--ghost" type="button" data-close-dialog="batch-dialog">
+          Cerrar
+        </button>
+        <button id="next-pending-button" class="btn btn--gold" type="button">
+          Siguiente pendiente
+        </button>
+      </div>
+    </dialog>
+
+    <dialog id="season-reset-dialog" class="modal modal--danger">
+      <form id="season-reset-form" method="dialog">
+        <div class="modal-icon" aria-hidden="true">☢️</div>
+        <h2>Reiniciar temporada</h2>
+        <p class="modal-lead">
+          Se borrarán <strong>TODOS</strong> los participantes, teléfonos, códigos,
+          reclamos, solicitudes, el sorteo, las asignaciones y la bitácora. Se conservará
+          únicamente la plantilla del mensaje. Los participantes se vuelven a sembrar
+          desde <code>config/participants.json</code> con códigos nuevos.
+        </p>
+        <div class="danger-backup-row">
+          <a class="btn btn--ghost btn--small" href="/admin/backup" download>
+            Descargar respaldo
+          </a>
+          <span>El respaldo contiene teléfonos y códigos.</span>
+        </div>
+        <label for="season-reset-password">Contraseña de administración</label>
+        <input
+          id="season-reset-password"
+          type="password"
+          autocomplete="current-password"
+        />
+        <label for="season-reset-confirm">
+          Escribe <strong>BORRAR TODO</strong>
+        </label>
+        <input
+          id="season-reset-confirm"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="BORRAR TODO"
+        />
+        <div id="season-active-wrap" hidden>
+          <label for="season-reset-active">
+            Ya hay personas que giraron. Escribe
+            <strong>YA GIRARON, BORRAR IGUAL</strong>
+          </label>
+          <input
+            id="season-reset-active"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="YA GIRARON, BORRAR IGUAL"
+          />
+        </div>
+        <p id="season-reset-error" class="form-error" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" type="button" data-close-dialog="season-reset-dialog">
+            Cancelar
+          </button>
+          <button id="season-reset-confirm-button" class="btn btn--danger" type="submit" disabled>
+            Borrar todo y reiniciar
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirm-dialog" class="modal">
+      <div class="modal-icon" id="confirm-icon" aria-hidden="true">⚠️</div>
+      <h2 id="confirm-title">Confirmar</h2>
+      <p id="confirm-message" class="modal-lead"></p>
+      <div class="modal-actions">
+        <button id="confirm-cancel" class="btn btn--ghost" type="button">Cancelar</button>
+        <button id="confirm-accept" class="btn btn--primary" type="button">Confirmar</button>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
